@@ -1,8 +1,9 @@
 import json
+import os
+from .services import FileService
+
 
 # import requests
-
-
 def lambda_handler(event, context):
     """Sample pure Lambda function
 
@@ -24,19 +25,22 @@ def lambda_handler(event, context):
 
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
+    
+    print("Received event: " + json.dumps(event, indent=2))
+    
+    fs = FileService(os.environ.get("BUCKET_NAME"), os.environ.get("BUCKET_PREFIX"))
+    min_date = event['queryStringParameters']['min_date']
+    
+    if min_date is None:
+        min_date = '2023-01-01'
+    
+    # Get buckets
+    file_list = fs.list_files(min_date)
+    
 
     return {
         "statusCode": 200,
         "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
+            "file_list": file_list
         }),
     }

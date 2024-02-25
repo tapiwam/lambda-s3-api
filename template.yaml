@@ -15,9 +15,14 @@ Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
-      Handler: app.lambda_handler
-      Runtime: python3.9
+      CodeUri: .
+      Handler: src.app.lambda_handler
+      Runtime: python3.10
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          BUCKET_NAME: tapiwam-data-src
+          BUCKET_PREFIX: test
       Architectures:
         - x86_64
       Events:
