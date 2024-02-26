@@ -1,9 +1,12 @@
 import json
 
+import moto
+import boto3
 import pytest
 
 from src import app
 
+REGION = 'us-east-1'
 
 @pytest.fixture()
 def apigw_event():
@@ -34,7 +37,7 @@ def apigw_event():
             },
             "stage": "prod",
         },
-        "queryStringParameters": {"foo": "bar"},
+        "queryStringParameters": {"min_date": "2024-01-01"},
         "headers": {
             "Via": "1.1 08f323deadbeefa7af34d5feb414ce27.cloudfront.net (CloudFront)",
             "Accept-Language": "en-US,en;q=0.8",
@@ -61,8 +64,22 @@ def apigw_event():
         "path": "/examplepath",
     }
 
+@pytest.fixture(scope="session")
+def mock_session() -> boto3.Session:
+    with moto.mock_aws():
+        mock_session = boto3.Session(
+            aws_access_key_id="mock_access_key",
+            aws_secret_access_key="mock_secret_key",
+            region_name=REGION
+        )
+        
+        bucket_name = 'tapiwam-data-src'
+        s3 = mock_session.resource('s3')
+        s3.create_bucket(Bucket=bucket_name)
+        yield mock_session
+        
 
-def test_lambda_handler(apigw_event):
+def test_lambda_handler(apigw_event, mock_session):
 
     ret = app.lambda_handler(apigw_event, "")
     data = json.loads(ret["body"])
@@ -70,3 +87,4 @@ def test_lambda_handler(apigw_event):
     assert ret["statusCode"] == 200
     assert "message" in ret["body"]
     assert data["message"] == "hello world"
+

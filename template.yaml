@@ -20,6 +20,7 @@ Resources:
       Runtime: python3.10
       Environment:
         Variables:
+          AWS_SAM_STACK_NAME: HelloWorld
           LOG_LEVEL: INFO
           BUCKET_NAME: tapiwam-data-src
           BUCKET_PREFIX: test

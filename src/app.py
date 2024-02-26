@@ -35,12 +35,16 @@ def lambda_handler(event, context):
         min_date = '2023-01-01'
     
     # Get buckets
-    file_list = fs.list_files(min_date)
+    # file_list = fs.list_files(min_date)
+    memory_file = fs.download_and_zip(min_date)
+    zip_name = 'Sample.zip'
     
-
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "file_list": file_list
-        }),
+        "body": memory_file,
+        "headers": {
+            "Content-Type": "application/zip",
+            "Content-Disposition": f"attachment; filename={zip_name}"
+        },
+        'isBase64Encoded': True
     }

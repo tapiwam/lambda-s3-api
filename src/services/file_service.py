@@ -3,6 +3,8 @@ import zipfile
 import io
 from io import BytesIO
 from botocore.exceptions import ClientError
+import traceback
+import base64
 
 """
 File Service class that will have methods to help with files. These will include
@@ -27,7 +29,7 @@ class FileService:
         # Extratc contents keys from response
         response = [item['Key'] for item in response['Contents']]
         
-        print(f"Fetched file list from S3. Bucket: {self.bucket_name}, Prefix: {self.prefix}, Min Date: {min_date}, Response: {response}")
+        print(f"Fetched file list from S3. Bucket: {self.bucket_name}, Prefix: {self.prefix}, Min Date: {min_date}")
 
         # Return the list of files
         return response
@@ -40,17 +42,17 @@ class FileService:
         # Download files from S3
         s3_items = []
         for file in file_list:
+            print("Processing file: " + file)
             item = {}
-            item['Key'] = file['Key']
-            
-            obj = s3.get_object(self.bucket_name, file['Key'])
+            item['Key'] = file
+            obj = s3.get_object(Bucket=self.bucket_name, Key=file)
             # s3_items.append(obj)
             item['Body'] = obj['Body'].read()
             s3_items.append(item)
-            print(f"Downloaded file from S3. Bucket: {self.bucket_name}, File: {file['Key']}")
+            print(f"Downloaded file from S3. Bucket: {self.bucket_name}, File: {file}")
             
         # Return the list of files
-        print(f"Downloaded files from S3. Bucket: {self.bucket_name}, File List: {s3_items}")
+        print(f"Downloaded files from S3. Bucket: {self.bucket_name}, File List: {file_list}")
         return s3_items
 
     def zip_files(self, s3_items: list):
@@ -63,13 +65,23 @@ class FileService:
                 zipf.writestr(item['Key'], item['Body'])
         memory_file.seek(0)
         
+        # Convert to base64 string
+        memory_file = base64.b64encode(memory_file.getvalue())
+        
         print(f"Zipped files to memory file. Bucket: {self.bucket_name}, File List: {len(s3_items)}")
         return memory_file
     
     def download_and_zip(self, min_date: str):
-        file_list = self.list_files(min_date)
-        s3_items = self.download_files(min_date, file_list)
-        memory_file = self.zip_files(s3_items)
+        try:
+            file_list = self.list_files(min_date)
+            s3_items = self.download_files(min_date, file_list)
+            memory_file = self.zip_files(s3_items)
+
+        except Exception as e:
+            print(f"Couldn't download files. Error: {e}")
+            traceback.print_exc()
+            raise
+        
         return memory_file
     
     def get_buckets(self):
