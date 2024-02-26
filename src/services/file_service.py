@@ -27,7 +27,11 @@ class FileService:
                                     #   StartAfter=min_date)
                                     
         # Extratc contents keys from response
-        response = [item['Key'] for item in response['Contents']]
+        if 'Contents' not in response:
+            response = []
+            print(f"No files found in S3. Bucket: {self.bucket_name}, Prefix: {self.prefix}, Min Date: {min_date}")
+        else:
+            response = [item['Key'] for item in response['Contents']]
         
         print(f"Fetched file list from S3. Bucket: {self.bucket_name}, Prefix: {self.prefix}, Min Date: {min_date}")
 

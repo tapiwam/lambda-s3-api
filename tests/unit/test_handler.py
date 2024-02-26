@@ -1,13 +1,19 @@
 import json
-
+import os
 import moto
 import boto3
 import pytest
+import base64
+import zipfile
+import io
 
 from src import app
 
 REGION = 'us-east-1'
 
+"""
+Fixture for mocking lambda event
+"""
 @pytest.fixture()
 def apigw_event():
     """ Generates API GW Event"""
@@ -64,6 +70,9 @@ def apigw_event():
         "path": "/examplepath",
     }
 
+"""
+Fixture setting up the moto S3 mock
+"""
 @pytest.fixture(scope="session")
 def mock_session() -> boto3.Session:
     with moto.mock_aws():
@@ -76,15 +85,48 @@ def mock_session() -> boto3.Session:
         bucket_name = 'tapiwam-data-src'
         s3 = mock_session.resource('s3')
         s3.create_bucket(Bucket=bucket_name)
-        yield mock_session
         
+        # Add a sample test files under test/
+        s3.Object(bucket_name, 'test/test1.txt').put(Body='hello world 1')
+        s3.Object(bucket_name, 'test/test2.txt').put(Body='hello world 2')
+        s3.Object(bucket_name, 'test/test3.txt').put(Body='hello world 3')
+        
+        
+        yield mock_session
 
+"""
+Fixture to set environment variables
+"""
+@pytest.fixture(autouse=True)
+def mock_env_vars():
+    os.environ['BUCKET_NAME'] = 'tapiwam-data-src'
+    os.environ['BUCKET_PREFIX'] = 'test'
+    
+"""
+Test lambda handler
+"""
+@pytest.mark.unit
 def test_lambda_handler(apigw_event, mock_session):
 
     ret = app.lambda_handler(apigw_event, "")
-    data = json.loads(ret["body"])
+    # data = json.loads(ret["body"])
+    
 
     assert ret["statusCode"] == 200
-    assert "message" in ret["body"]
-    assert data["message"] == "hello world"
-
+    
+    # Check headers for zip
+    assert "Content-Type" in ret["headers"]
+    assert ret["headers"]["Content-Type"] == "application/zip"
+    
+    # Check body for zip base64 string
+    body = ret["body"]
+    assert body is not None
+    
+    # Decode base64 body and check files in zip
+    print("Decoding body.")
+    body = base64.b64decode(body)
+    print("Decoded body.")
+    body = zipfile.ZipFile(io.BytesIO(body))
+    print("Files in zip: " + str(body.namelist()))
+    assert body.namelist() == ['test/test1.txt', 'test/test2.txt', 'test/test3.txt']
+    
