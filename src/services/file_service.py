@@ -17,7 +17,14 @@ class FileService:
         self.bucket_name = bucket_name
         self.prefix = prefix
         self.s3_client = boto3.client('s3')
-        
+    
+    """
+    List files from S3 based on the given minimum date.
+    Args:
+        min_date (str): The minimum date to filter the file list.
+    Returns:
+        list: A list of file names from the S3 bucket with the specified prefix and minimum date.
+    """
     def list_files(self, min_date: str):
         print(f"Listing files from S3. Bucket: {self.bucket_name}, Prefix: {self.prefix}, Min Date: {min_date}")
         s3 = self.s3_client
@@ -38,7 +45,16 @@ class FileService:
         # Return the list of files
         return response
 
-    # Function to download files from list in S3 and return them in a zip
+    """
+    Download files from S3 using the provided minimum date and list of files.
+    
+    Args:
+        min_date (str): The minimum date for downloading files.
+        file_list (list): The list of files to be downloaded from S3.
+    
+    Returns:
+        list: A list of downloaded files from S3.
+    """
     def download_files(self, min_date: str, file_list: list):
         print(f"Downloading files from S3. Bucket: {self.bucket_name}, File List: {file_list}")
         s3 = self.s3_client
@@ -59,6 +75,13 @@ class FileService:
         print(f"Downloaded files from S3. Bucket: {self.bucket_name}, File List: {file_list}")
         return s3_items
 
+    """
+    Zip files from S3 into a memory file and return the memory file bytes.
+    Parameters:
+        s3_items (list): A list of S3 items to be zipped.
+    Returns:
+        bytes: The zipped files as a memory file in base64 string format.
+    """
     def zip_files(self, s3_items: list):
         print(f"Zipping files. Bucket: {self.bucket_name}, File List: {len(s3_items)}")
         
@@ -70,11 +93,19 @@ class FileService:
         memory_file.seek(0)
         
         # Convert to base64 string
-        memory_file = base64.b64encode(memory_file.getvalue())
+        # memory_file = base64.b64encode(memory_file.getvalue())
         
         print(f"Zipped files to memory file. Bucket: {self.bucket_name}, File List: {len(s3_items)}")
-        return memory_file
+        return memory_file.getvalue()
     
+    
+    """
+        Download and zip files from S3 bucket.
+        Args:
+            min_date (str): The minimum date for filtering files.
+        Returns:
+            memory_file: The zipped memory file containing the downloaded files.
+        """
     def download_and_zip(self, min_date: str):
         try:
             file_list = self.list_files(min_date)

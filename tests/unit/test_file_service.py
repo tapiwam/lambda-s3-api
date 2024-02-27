@@ -27,7 +27,6 @@ def mock_session() -> boto3.Session:
 """
 Test file service
 """
-@pytest.mark.unit
 def test_file_service(mock_session):
     file_service = FileService(bucket_name='test_bucket_name', prefix='test_prefix')
     assert file_service.get_buckets() == ['test_bucket_name']

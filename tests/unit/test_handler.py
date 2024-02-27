@@ -105,7 +105,6 @@ def mock_env_vars():
 """
 Test lambda handler
 """
-@pytest.mark.unit
 def test_lambda_handler(apigw_event, mock_session):
 
     ret = app.lambda_handler(apigw_event, "")

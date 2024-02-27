@@ -1,9 +1,21 @@
 import json
 import os
 from .services import FileService
+import base64
 
 
-# import requests
+def encodeResponseBase64(body):
+    return base64.b64encode(body).decode('utf-8')
+
+def responseBuilder(statusCode: int, body: str, isBase64Encoded: bool = False, headers: dict = {}):
+    return {
+        "statusCode": statusCode,
+        "body": body,
+        "isBase64Encoded": isBase64Encoded,
+        "headers": headers
+    }
+
+
 def lambda_handler(event, context):
     """Sample pure Lambda function
 
@@ -36,15 +48,27 @@ def lambda_handler(event, context):
     
     # Get buckets
     # file_list = fs.list_files(min_date)
-    memory_file = fs.download_and_zip(min_date)
+    memory_file_bytes = fs.download_and_zip(min_date)
+    
+    # Convert to base64 string
+    memory_file = encodeResponseBase64(memory_file_bytes)
     zip_name = 'Sample.zip'
     
-    return {
-        "statusCode": 200,
-        "body": memory_file,
-        "headers": {
+    return responseBuilder(statusCode=200, 
+        body=memory_file, 
+        isBase64Encoded=True, 
+        headers={
             "Content-Type": "application/zip",
             "Content-Disposition": f"attachment; filename={zip_name}"
-        },
-        'isBase64Encoded': True
-    }
+        }
+    )
+    
+    # return  {
+    #     "statusCode": 200,
+    #     "body": memory_file,
+    #     "headers": {
+    #         "Content-Type": "application/zip",
+    #         "Content-Disposition": f"attachment; filename={zip_name}"
+    #     },
+    #     'isBase64Encoded': True
+    # }

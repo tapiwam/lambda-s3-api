@@ -32,6 +32,8 @@ Resources:
           Properties:
             Path: /hello
             Method: get
+      Policies: 
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
